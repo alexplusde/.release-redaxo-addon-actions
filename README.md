@@ -48,3 +48,9 @@ jobs:
         with:
           webhook_url: ${{ secrets.WEBHOOK_URL }}
 ```
+
+### Secrets
+
+<https://github.com/organizations/alexplusde/settings/secrets/actions>
+
+`WEBHOOK_URL`
