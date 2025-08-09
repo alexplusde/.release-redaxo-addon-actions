@@ -30,5 +30,9 @@ runs:
         else
           STATUS="release"
         fi
-        echo "VERSION=$VERSION](#)
-
+        echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+        echo "RELEASE_DATE=$RELEASE_DATE" >> $GITHUB_OUTPUT
+        echo "REPO_URL=$REPO_URL" >> $GITHUB_OUTPUT
+        echo "ZIP_URL=$ZIP_URL" >> $GITHUB_OUTPUT
+        echo "NOTES_B64=$NOTES_B64" >> $GITHUB_OUTPUT
+        echo "STATUS=$STATUS" >> $GITHUB_OUTPUT
