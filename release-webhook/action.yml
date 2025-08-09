@@ -19,9 +19,9 @@ runs:
       id: meta
       shell: bash
       run: |
-        VERSION=$(yq -r '.version' ${{ inputs.package_file }})
-        RELEASE_DATE=$(yq -r '.release_datetime // ""' ${{ inputs.package_file }})
-        REPO_URL=$(yq -r '.repository_url // "https://github.com/${{ github.repository }}"' ${{ inputs.package_file }})
+        VERSION=$(yq -r '.version' "${{ inputs.package_file }}")
+        RELEASE_DATE=$(yq -r '.release_datetime // ""' "${{ inputs.package_file }}")
+        REPO_URL=$(yq -r '.repository_url // "https://github.com/${{ github.repository }}"' "${{ inputs.package_file }}")
         ZIP_URL="https://github.com/${{ github.repository }}/archive/${{ github.event.release.tag_name }}.zip"
         NOTES="${{ github.event.release.body }}"
         NOTES_B64=$(echo "$NOTES" | base64 -w0)
@@ -36,3 +36,17 @@ runs:
         echo "ZIP_URL=$ZIP_URL" >> $GITHUB_OUTPUT
         echo "NOTES_B64=$NOTES_B64" >> $GITHUB_OUTPUT
         echo "STATUS=$STATUS" >> $GITHUB_OUTPUT
+
+    - name: Send webhook notification
+      shell: bash
+      run: |
+        curl -X POST "${{ inputs.webhook_url }}" \
+          -H "Content-Type: application/json" \
+          -d "{
+            \"version\": \"${{ steps.meta.outputs.VERSION }}\",
+            \"release_date\": \"${{ steps.meta.outputs.RELEASE_DATE }}\",
+            \"repo_url\": \"${{ steps.meta.outputs.REPO_URL }}\",
+            \"zip_url\": \"${{ steps.meta.outputs.ZIP_URL }}\",
+            \"notes_b64\": \"${{ steps.meta.outputs.NOTES_B64 }}\",
+            \"status\": \"${{ steps.meta.outputs.STATUS }}\"
+          }"
