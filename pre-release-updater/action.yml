@@ -1,0 +1,25 @@
+name: 'Pre-Release Updater'
+description: 'Setzt Release-Datum und Repository-URL in package.yml'
+inputs:
+  package_file:
+    description: 'Pfad zur package.yml'
+    required: false
+    default: 'package.yml'
+runs:
+  using: "composite"
+  steps:
+    - name: Set release datetime and repo URL
+      shell: bash
+      run: |
+        DATE="$(date -u +'%Y-%m-%d %H:%M:%S')"
+        REPO_URL="https://github.com/${{ github.repository }}"
+        pip install yq
+        yq -y '.release_datetime = strenv(DATE) | .repository_url = strenv(REPO_URL)' -i ${{ inputs.package_file }}
+    - name: Commit changes
+      shell: bash
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git add ${{ inputs.package_file }}
+        git commit -m "chore: set release datetime and repo URL in package.yml"
+        git push
