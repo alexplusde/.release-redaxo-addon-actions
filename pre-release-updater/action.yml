@@ -1,5 +1,5 @@
 name: 'Pre-Release Updater'
-description: 'Setzt Release-Datum und Repository-URL in package.yml'
+description: 'Setzt Release-Datum, Repo-URL und Pre-Release-Status in package.yml'
 inputs:
   package_file:
     description: 'Pfad zur package.yml'
@@ -8,18 +8,26 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Set release datetime and repo URL
+    - name: Set release metadata
       shell: bash
       run: |
+        pip install yq
         DATE="$(date -u +'%Y-%m-%d %H:%M:%S')"
         REPO_URL="https://github.com/${{ github.repository }}"
-        pip install yq
-        yq -y '.release_datetime = strenv(DATE) | .repository_url = strenv(REPO_URL)' -i ${{ inputs.package_file }}
+        # Default: false
+        PRERELEASE="false"
+        # Wenn das Release-Event existiert und prerelease true ist, dann true
+        if [ "${{ github.event.release.prerelease }}" = "true" ]; then
+          PRERELEASE="true"
+        fi
+        yq -y \
+          '.release_datetime = strenv(DATE) | .repository_url = strenv(REPO_URL) | .prerelease = strenv(PRERELEASE)' \
+          -i ${{ inputs.package_file }}
     - name: Commit changes
       shell: bash
       run: |
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
         git add ${{ inputs.package_file }}
-        git commit -m "chore: set release datetime and repo URL in package.yml"
+        git commit -m "chore: set release datetime, repo URL and prerelease status in package.yml"
         git push
