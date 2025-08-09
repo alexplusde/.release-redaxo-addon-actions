@@ -1,0 +1,51 @@
+name: 'Release Webhook Notification'
+description: 'Sendet Release-Metadaten und Notizen als Webhook nach erfolgreichem Release'
+inputs:
+  webhook_url:
+    description: 'Die Ziel-URL für den Webhook'
+    required: true
+  package_file:
+    description: 'Pfad zur package.yml'
+    required: false
+    default: 'package.yml'
+runs:
+  using: "composite"
+  steps:
+    - name: Install tools
+      shell: bash
+      run: pip install yq
+
+    - name: Extract metadata
+      id: meta
+      shell: bash
+      run: |
+        VERSION=$(yq -r '.version' ${{ inputs.package_file }})
+        RELEASE_DATE=$(yq -r '.release_datetime // ""' ${{ inputs.package_file }})
+        REPO_URL=$(yq -r '.repository_url // "https://github.com/${{ github.repository }}"' ${{ inputs.package_file }})
+        ZIP_URL="https://github.com/${{ github.repository }}/archive/${{ github.event.release.tag_name }}.zip"
+        NOTES="${{ github.event.release.body }}"
+        echo "VERSION=$VERSION" >> $GITHUB_ENV
+        echo "RELEASE_DATE=$RELEASE_DATE" >> $GITHUB_ENV
+        echo "REPO_URL=$REPO_URL" >> $GITHUB_ENV
+        echo "ZIP_URL=$ZIP_URL" >> $GITHUB_ENV
+        echo "NOTES=$NOTES" >> $GITHUB_ENV
+
+    - name: Send webhook
+      shell: bash
+      env:
+        WEBHOOK_URL: ${{ inputs.webhook_url }}
+        VERSION: ${{ env.VERSION }}
+        RELEASE_DATE: ${{ env.RELEASE_DATE }}
+        REPO_URL: ${{ env.REPO_URL }}
+        ZIP_URL: ${{ env.ZIP_URL }}
+        NOTES: ${{ env.NOTES }}
+      run: |
+        curl -X POST "$WEBHOOK_URL" \
+          -H "Content-Type: application/json" \
+          -d '{
+            "version": "'"$VERSION"'",
+            "release_date": "'"$RELEASE_DATE"'",
+            "repository_url": "'"$REPO_URL"'",
+            "zip_url": "'"$ZIP_URL"'",
+            "release_notes": "'"$NOTES"'"
+          }'
