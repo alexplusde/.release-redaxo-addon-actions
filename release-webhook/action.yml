@@ -43,6 +43,8 @@ runs:
         curl -X POST "${{ inputs.webhook_url }}" \
           -H "Content-Type: application/json" \
           -d "{
+            \"addon\": \"${{ github.event.repository.name }}\",
+            \"owner\": \"${{ github.repository_owner }}\",
             \"version\": \"${{ steps.meta.outputs.VERSION }}\",
             \"release_date\": \"${{ steps.meta.outputs.RELEASE_DATE }}\",
             \"repo_url\": \"${{ steps.meta.outputs.REPO_URL }}\",
